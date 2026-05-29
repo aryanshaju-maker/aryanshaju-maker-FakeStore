@@ -9,12 +9,15 @@ import {
   StyleSheet,
   Alert
 } from 'react-native'
+import { useDispatch } from 'react-redux'
+import { addToCart } from '../store/cartSlice'
 import BASE_URL from '../config/api'
 
 export default function ProductDetailScreen ({ route, navigation }) {
   const { productId } = route.params
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const dispatch = useDispatch()
 
   useEffect(() => {
     fetchProduct()
@@ -46,10 +49,17 @@ export default function ProductDetailScreen ({ route, navigation }) {
   }
 
   const handleAddToCart = () => {
-    // Placeholder — full cart functionality added in Milestone 2
+    dispatch(
+      addToCart({
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        image: product.image
+      })
+    )
     Alert.alert(
-      'Coming Soon',
-      '"Add to Cart" will be fully implemented in Milestone 2.'
+      'Added to Cart',
+      `"${product.title}" has been added to your cart.`
     )
   }
 
@@ -66,17 +76,14 @@ export default function ProductDetailScreen ({ route, navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Product Image */}
       <Image
         source={{ uri: getImageUri(product.image) }}
         style={styles.image}
         resizeMode='contain'
       />
 
-      {/* Product Title */}
       <Text style={styles.title}>{product.title}</Text>
 
-      {/* Rate / Count / Price Row */}
       <View style={styles.metaRow}>
         <Text style={styles.metaText}>
           Rate: <Text style={styles.metaValue}>{product.rating?.rate}</Text>
@@ -90,7 +97,6 @@ export default function ProductDetailScreen ({ route, navigation }) {
         </Text>
       </View>
 
-      {/* Back + Add to Cart buttons */}
       <View style={styles.actionRow}>
         <TouchableOpacity
           style={[styles.btn, styles.backBtn]}
@@ -108,7 +114,6 @@ export default function ProductDetailScreen ({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Description */}
       <Text style={styles.descLabel}>Description:</Text>
       <View style={styles.descBox}>
         <Text style={styles.descText}>{product.description}</Text>
