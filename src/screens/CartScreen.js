@@ -30,6 +30,46 @@ export default function CartScreen () {
     return `${BASE_URL}${imagePath}`
   }
 
+  // Inside your component, add:
+  const { token } = useSelector(s => s.auth)
+  const orders = useSelector(s => s.orders.orders)
+
+  // Sync cart to server whenever items change
+  useEffect(() => {
+    if (token) {
+      const serverItems = items.map(i => ({
+        id: i.id,
+        price: i.price,
+        count: i.quantity
+      }))
+      api.putCart(token, serverItems).catch(() => {})
+    }
+  }, [items])
+
+  // Checkout handler
+  const handleCheckOut = async () => {
+    if (items.length === 0) return
+    try {
+      const orderItems = items.map(i => ({
+        prodID: i.id,
+        price: i.price,
+        quantity: i.quantity
+      }))
+      const res = await api.createOrder(token, orderItems)
+      if (res.status === 'OK') {
+        dispatch(clearCart())
+        // Refresh orders
+        const ordersRes = await api.getOrders(token)
+        if (ordersRes.status === 'OK') dispatch(setOrders(ordersRes.orders))
+        Alert.alert('Success', `Order #${res.id} created!`)
+      } else {
+        Alert.alert('Error', res.message || 'Order failed.')
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Could not connect to server.')
+    }
+  }
+
   // Empty cart state
   if (items.length === 0) {
     return (
@@ -52,7 +92,6 @@ export default function CartScreen () {
           <Text style={styles.summaryValue}>${totalPrice.toFixed(2)}</Text>
         </Text>
       </View>
-
       <FlatList
         data={items}
         keyExtractor={item => String(item.id)}
@@ -93,6 +132,9 @@ export default function CartScreen () {
           </View>
         )}
       />
+      <TouchableOpacity style={styles.btnCheckout} onPress={handleCheckOut}>
+        <Text style={styles.checkoutText}>🛒 Check Out</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   )
 }
@@ -197,5 +239,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#333'
-  }
+  },
+  // Style:
+  btnCheckout: {
+    backgroundColor: '#1a237e',
+    margin: 16,
+    padding: 16,
+    borderRadius: 10,
+    alignItems: 'center'
+  },
+  checkoutText: { color: '#fff', fontSize: 18, fontWeight: 'bold' }
 })
